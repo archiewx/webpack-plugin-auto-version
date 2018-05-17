@@ -1,0 +1,37 @@
+{
+  "name": "webpack-plugin-auto-version",
+  "version": "0.1.0",
+  "description": "webpack plugin for version",
+  "repository": {
+    "type": "github",
+    "url": "https://github.com/zsirfs/webpack-plugin-auto-version.git"
+  },
+  "main": "dist/WebpackAutoVersionPlugin.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rollup -c"
+  },
+  "keywords": ["webpack", "webpack-plugin", "version"],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "babel-core": "^6.26.3",
+    "babel-eslint": "^8.2.3",
+    "babel-plugin-transform-class-properties": "^6.24.1",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-es2015-rollup": "^3.0.0",
+    "eslint-config-airbnb-base-extend": "^1.3.0",
+    "rollup": "^0.59.1",
+    "rollup-plugin-babel": "^3.0.4",
+    "rollup-plugin-commonjs": "^9.1.3",
+    "rollup-plugin-eslint": "^4.0.0",
+    "rollup-plugin-node-resolve": "^3.3.0",
+    "rollup-plugin-uglify": "^3.0.0"
+  },
+  "dependencies": {
+    "node-notifier": "^5.2.1",
+    "rimraf": "^2.6.2",
+    "semver": "^5.5.0",
+    "yargs": "^11.0.0"
+  }
+}

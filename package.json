@@ -1,6 +1,6 @@
 {
   "name": "webpack-plugin-auto-version",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "webpack plugin for version",
   "repository": {
     "type": "github",
@@ -13,7 +13,11 @@
     "dev": "NODE_ENV=development rollup -c --watch",
     "build": "NODE_ENV=production rollup -c"
   },
-  "keywords": ["webpack", "webpack-plugin", "version"],
+  "keywords": [
+    "webpack",
+    "webpack-plugin",
+    "version"
+  ],
   "author": "",
   "license": "ISC",
   "devDependencies": {

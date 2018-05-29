@@ -24,6 +24,7 @@ class WebpackAutoVersionPlugin {
     this.inspectContent = options.inspectContent || !!options.template
     // 自定义资源内版本替换模板 [DUOKE-GM]version[/DUOKE-GM]
     this.template = options.template || `[${this.copyright}]version[/${this.copyright}]`
+    this.ignoreSuffix = options.ignoreSuffix || ['.html']
   }
   init = () => {
     this.pkgPath = `${this.webpackConfig.context}/package.json`
@@ -134,12 +135,14 @@ class WebpackAutoVersionPlugin {
             newAssets[`${version}/${newFilename}`] = asset
             that.injectCss(asset)
             break
-          case '.html':
-            newAssets[newFilename] = asset
-            that.injectHtml(asset)
-            break
           default:
-            newAssets[`${version}/${newFilename}`] = asset
+            if (that.ignoreSuffix.indexOf(ext) !== -1) {
+              newAssets[newFilename] = asset
+              that.injectHtml(asset)
+              // 替换文件中资源
+            } else {
+              newAssets[`${version}/${newFilename}`] = asset
+            }
             break
         }
       })

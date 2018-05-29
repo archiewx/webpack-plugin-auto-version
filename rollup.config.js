@@ -4,21 +4,40 @@ import babel from 'rollup-plugin-babel'
 import resolve from 'rollup-plugin-node-resolve'
 import commonjs from 'rollup-plugin-commonjs'
 
-export default {
-  input: 'src/main.js',
-  output: {
-    file: 'dist/WebpackAutoVersionPlugin.js',
-    format: 'cjs'
+export default [
+  {
+    input: 'src/main.js',
+    output: {
+      file: 'dist/WebpackAutoVersionPlugin.js',
+      format: 'cjs'
+    },
+    plugins: [
+      resolve(),
+      commonjs({
+        include: 'node_modules/**',
+        exclude: ['src/**']
+      }),
+      eslint(),
+      babel(),
+      uglify()
+    ],
+    external: ['fs', 'os', 'path', 'yargs', 'semver', 'rimraf', 'node-notifier']
   },
-  plugins: [
-    resolve(),
-    commonjs({
-      include: 'node_modules/**',
-      exclude: ['src/**']
-    }),
-    eslint(),
-    babel(),
-    uglify()
-  ],
-  external: ['fs', 'os', 'path', 'yargs', 'semver', 'rimraf', 'node-notifier']
-}
+  {
+    input: 'src/main.js',
+    output: {
+      file: 'dist/WebpackAutoVersionPlugin.common.js',
+      format: 'cjs'
+    },
+    plugins: [
+      resolve(),
+      commonjs({
+        include: 'node_modules/**',
+        exclude: ['src/**']
+      }),
+      eslint(),
+      babel()
+    ],
+    external: ['fs', 'os', 'path', 'yargs', 'semver', 'rimraf', 'node-notifier']
+  }
+]

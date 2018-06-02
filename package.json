@@ -6,7 +6,7 @@
     "type": "github",
     "url": "https://github.com/zsirfs/webpack-plugin-auto-version.git"
   },
-  "main": "dist/WebpackAutoVersionPlugin.js",
+  "main": "dist/index.js",
   "types": "src/types/main.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

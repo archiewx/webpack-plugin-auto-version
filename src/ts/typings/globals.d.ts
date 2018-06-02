@@ -2,7 +2,7 @@
 
 import * as webpack from 'webpack'
 
-declare interface IOption {
+declare type OptionType = {
   filenameMark: string
   copyright: string
   space?: number
@@ -24,7 +24,7 @@ declare class WebpackAutoVersionPlugin {
   newVersion: string
   webpackConfig: webpack.Configuration
 
-  private constructor(options: IOption)
+  private constructor(options: OptionType)
 
   private init(): void
 

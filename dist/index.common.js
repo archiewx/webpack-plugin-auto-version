@@ -2,13 +2,64 @@
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
+var os = require('os');
 var path = _interopDefault(require('path'));
 var fs = _interopDefault(require('fs'));
-var os = require('os');
 var yargs = _interopDefault(require('yargs'));
 var semver = _interopDefault(require('semver'));
 var rimraf = _interopDefault(require('rimraf'));
 var notifier = _interopDefault(require('node-notifier'));
+
+// 生成html 之前进行修改标签
+var htmlWebpackPluginBeforeHtmlGeneration = (function (instance) {
+  var filenameMark = instance.filenameMark;
+
+  return function (data, cb) {
+    // 监听html-webpack-plugin-before-html-generation
+    var _data$assets = data.assets,
+        _data$assets$js = _data$assets.js,
+        jsNames = _data$assets$js === undefined ? [] : _data$assets$js,
+        _data$assets$css = _data$assets.css,
+        cssNames = _data$assets$css === undefined ? [] : _data$assets$css;
+
+    data.assets.js = jsNames.map(function (js) {
+      var filename = "/" + instance.newVersion + js;
+      var hasReplace = filename.indexOf(instance.newVersion) !== -1;
+      if (hasReplace) {
+        return js;
+      }
+      if (filenameMark) {
+        return filename.replace(filenameMark, instance.newVersion);
+      }
+      return "/" + instance.newVersion + js;
+    });
+    data.assets.css = cssNames.map(function (css) {
+      var filename = "/" + instance.newVersion + css;
+      var hasReplace = filename.indexOf(instance.newVersion) !== -1;
+      if (hasReplace) {
+        return css;
+      }
+      if (filenameMark) {
+        return filename.replace(filenameMark, instance.newVersion);
+      }
+      return filename;
+    });
+    cb();
+  };
+});
+
+var htmlWebpackPluginAfterHtmlProcessing = (function (instance) {
+  var inspectContent = instance.inspectContent;
+
+  return function (data, cb) {
+    // 监听html-webpack-plugin-after-html-processing事件
+    if (inspectContent) {
+      var versionTag = '<!-- ' + instance.banner + ' -->';
+      data.html = versionTag + os.EOL + data.html;
+    }
+    cb(null, data);
+  };
+});
 
 var classCallCheck = function (instance, Constructor) {
   if (!(instance instanceof Constructor)) {
@@ -25,9 +76,8 @@ var WebpackAutoVersionPlugin = function WebpackAutoVersionPlugin() {
   this.init = function () {
     _this.pkgPath = _this.webpackConfig.context + '/package.json';
     _this.pkg = _this.readJsonFile(_this.pkgPath);
-    var version = _this.pkg.version;
-
-    _this.banner = _this.copyright + ' version ' + version + '   ' + new Date().toLocaleString();
+    _this.autoIncreaseVersion();
+    _this.banner = _this.copyright + ' version ' + _this.newVersion + '   ' + new Date().toLocaleString();
   };
 
   this.readJsonFile = function (filePath) {
@@ -40,6 +90,9 @@ var WebpackAutoVersionPlugin = function WebpackAutoVersionPlugin() {
       return;
     }
     var source = asset.source();
+    if (typeof source !== 'string') {
+      return;
+    }
     asset.source = function () {
       return source.replace(_this.template, _this.newVersion);
     };
@@ -128,7 +181,6 @@ var WebpackAutoVersionPlugin = function WebpackAutoVersionPlugin() {
     var that = _this;
     _this.webpackConfig = complier.options;
     _this.init();
-    _this.autoIncreaseVersion();
     var version = _this.pkg.version;
 
     complier.plugin('emit', function (compilation, callback) {
@@ -185,12 +237,25 @@ var WebpackAutoVersionPlugin = function WebpackAutoVersionPlugin() {
       // 编译完成后版本号记录到pkg中
       that.persistVersion();
     });
+
+    if (complier.hooks) {
+      console.log('hooks');
+      complier.hooks.compilation.tap('WebpackAutoVersionPlugin', function (compliation) {
+        compliation.hooks.htmlWebpackPluginBeforeHtmlGeneration.tapAsync('WebpackAutoVersionPlugin', htmlWebpackPluginBeforeHtmlGeneration(_this));
+        compliation.hooks.htmlWebpackPluginAfterHtmlProcessing.tapAsync('WebpackAutoVersionPlugin', htmlWebpackPluginAfterHtmlProcessing(_this));
+      });
+    } else {
+      complier.plugin('compilation', function (compliation) {
+        compliation.plugin('html-webpack-plugin-before-html-generation', htmlWebpackPluginBeforeHtmlGeneration(_this));
+        compliation.plugin('html-webpack-plugin-after-html-processing', htmlWebpackPluginAfterHtmlProcessing(_this));
+      });
+    }
   };
 
   // 文件名替换标记 [version] -> v1.2.2
   this.filenameMark = options.filenameMark;
   // 版权名称
-  this.copyright = options.copyright || 'DUOKE-GM';
+  this.copyright = options.copyright || 'VERSION';
   // package.json路径
   this.pkgPath = '';
   // package.json内容
@@ -200,8 +265,8 @@ var WebpackAutoVersionPlugin = function WebpackAutoVersionPlugin() {
   // 是否自动清理老版本
   this.cleanup = options.cleanup || false;
   // 是否检测资源内的标签
-  this.inspectContent = options.inspectContent || !!options.template;
-  // 自定义资源内版本替换模板 [DUOKE-GM]version[/DUOKE-GM]
+  this.inspectContent = options.inspectContent || true;
+  // 自定义资源内版本替换模板 [VERSION]version[/VERSION]
   this.template = options.template || '[' + this.copyright + ']version[/' + this.copyright + ']';
   this.ignoreSuffix = options.ignoreSuffix || ['.html'];
 }

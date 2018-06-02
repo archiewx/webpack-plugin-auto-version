@@ -5,13 +5,15 @@ import yargs from 'yargs'
 import semver from 'semver'
 import rimraf from 'rimraf'
 import notifier from 'node-notifier'
+import htmlWebpackPluginBeforeHtmlGeneration from './events/htmlWebpackPluginBeforeHtmlGeneration'
+import htmlWebpackPluginAfterHtmlProcessing from './events/htmlWebpackPluginAfterHtmlProcessing'
 
 class WebpackAutoVersionPlugin {
   constructor(options = {}) {
     // 文件名替换标记 [version] -> v1.2.2
     this.filenameMark = options.filenameMark
     // 版权名称
-    this.copyright = options.copyright || 'DUOKE-GM'
+    this.copyright = options.copyright || 'VERSION'
     // package.json路径
     this.pkgPath = ''
     // package.json内容
@@ -21,16 +23,16 @@ class WebpackAutoVersionPlugin {
     // 是否自动清理老版本
     this.cleanup = options.cleanup || false
     // 是否检测资源内的标签
-    this.inspectContent = options.inspectContent || !!options.template
-    // 自定义资源内版本替换模板 [DUOKE-GM]version[/DUOKE-GM]
+    this.inspectContent = options.inspectContent || true
+    // 自定义资源内版本替换模板 [VERSION]version[/VERSION]
     this.template = options.template || `[${this.copyright}]version[/${this.copyright}]`
     this.ignoreSuffix = options.ignoreSuffix || ['.html']
   }
   init = () => {
     this.pkgPath = `${this.webpackConfig.context}/package.json`
     this.pkg = this.readJsonFile(this.pkgPath)
-    const { version } = this.pkg
-    this.banner = `${this.copyright} version ${version}   ${new Date().toLocaleString()}`
+    this.autoIncreaseVersion()
+    this.banner = `${this.copyright} version ${this.newVersion}   ${new Date().toLocaleString()}`
   }
   readJsonFile = (filePath) => {
     const json = fs.readFileSync(filePath)
@@ -41,6 +43,9 @@ class WebpackAutoVersionPlugin {
       return
     }
     const source = asset.source()
+    if (typeof source !== 'string') {
+      return
+    }
     asset.source = () => source.replace(this.template, this.newVersion)
   }
   // 清理以前版本
@@ -116,7 +121,6 @@ class WebpackAutoVersionPlugin {
     const that = this
     this.webpackConfig = complier.options
     this.init()
-    this.autoIncreaseVersion()
     const { version } = this.pkg
     complier.plugin('emit', (compilation, callback) => {
       const newAssets = {}
@@ -169,6 +173,31 @@ class WebpackAutoVersionPlugin {
       // 编译完成后版本号记录到pkg中
       that.persistVersion()
     })
+
+    if (complier.hooks) {
+      console.log('hooks')
+      complier.hooks.compilation.tap('WebpackAutoVersionPlugin', (compliation) => {
+        compliation.hooks.htmlWebpackPluginBeforeHtmlGeneration.tapAsync(
+          'WebpackAutoVersionPlugin',
+          htmlWebpackPluginBeforeHtmlGeneration(this)
+        )
+        compliation.hooks.htmlWebpackPluginAfterHtmlProcessing.tapAsync(
+          'WebpackAutoVersionPlugin',
+          htmlWebpackPluginAfterHtmlProcessing(this)
+        )
+      })
+    } else {
+      complier.plugin('compilation', (compliation) => {
+        compliation.plugin(
+          'html-webpack-plugin-before-html-generation',
+          htmlWebpackPluginBeforeHtmlGeneration(this)
+        )
+        compliation.plugin(
+          'html-webpack-plugin-after-html-processing',
+          htmlWebpackPluginAfterHtmlProcessing(this)
+        )
+      })
+    }
   }
 }
 

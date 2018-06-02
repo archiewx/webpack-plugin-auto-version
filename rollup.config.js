@@ -6,9 +6,9 @@ import commonjs from 'rollup-plugin-commonjs'
 
 export default [
   {
-    input: 'src/main.js',
+    input: 'src/index.js',
     output: {
-      file: 'dist/WebpackAutoVersionPlugin.js',
+      file: 'dist/index.js',
       format: 'cjs'
     },
     plugins: [
@@ -24,9 +24,9 @@ export default [
     external: ['fs', 'os', 'path', 'yargs', 'semver', 'rimraf', 'node-notifier']
   },
   {
-    input: 'src/main.js',
+    input: 'src/index.js',
     output: {
-      file: 'dist/WebpackAutoVersionPlugin.common.js',
+      file: 'dist/index.common.js',
       format: 'cjs'
     },
     plugins: [

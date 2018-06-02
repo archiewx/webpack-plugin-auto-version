@@ -6,7 +6,7 @@ import semver from 'semver'
 import rimraf from 'rimraf'
 import notifier from 'node-notifier'
 import webpack from 'webpack'
-// import globals from '../typings/globals'
+import globals from './typings/globals'
 
 class WebpackAutoVersionPlugin {
   private filenameMark: string
@@ -21,7 +21,7 @@ class WebpackAutoVersionPlugin {
   private newVersion: string
   private webpackConfig: webpack.Configuration
 
-  constructor(options: IOption) {
+  constructor(options: globals.OptionType) {
     // 文件名替换标记 [version] -> v1.2.2
     this.filenameMark = options.filenameMark
     // 版权名称

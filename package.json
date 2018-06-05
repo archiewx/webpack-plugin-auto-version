@@ -1,6 +1,6 @@
 {
   "name": "webpack-plugin-auto-version",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "webpack plugin for version",
   "repository": {
     "type": "github",

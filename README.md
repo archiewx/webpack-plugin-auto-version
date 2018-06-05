@@ -71,3 +71,4 @@ template 会被自动替换成和 package.json 对应的版本号
 * 支持配置package.json 配置文件，支持多项目
 * 支持开发环境
 * 支持webpack钩子函数
+* 修复和roadhog 兼容(糟心的东西，没触发html-webpack-plugin 钩子)

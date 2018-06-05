@@ -31,8 +31,15 @@ class WebpackAutoVersionPlugin {
   init = () => {
     this.pkgPath = `${this.webpackConfig.context}/package.json`
     this.pkg = this.readJsonFile(this.pkgPath)
+    this.fixPackageFile()
     this.autoIncreaseVersion()
     this.banner = `${this.copyright} version ${this.newVersion}   ${new Date().toLocaleString()}`
+  }
+  fixPackageFile = () => {
+    // 判断version 是否存在
+    if (!this.pkg.version) {
+      this.pkg.version = '0.0.1'
+    }
   }
   readJsonFile = (filePath) => {
     const json = fs.readFileSync(filePath)
@@ -117,7 +124,6 @@ class WebpackAutoVersionPlugin {
   }
 
   apply = (complier) => {
-    // 使用在HtmlWebpackPlugin插件前，无html资源
     const that = this
     this.webpackConfig = complier.options
     this.init()
@@ -151,6 +157,7 @@ class WebpackAutoVersionPlugin {
         }
       })
       compilation.assets = newAssets
+      // 这里替换名称标记，增加了版本 todo: 需要增加判断
       compilation.chunks.forEach((chunk) => {
         chunk.files = chunk.files
           .filter((filename) => path.extname(filename) !== '.html')
@@ -161,6 +168,7 @@ class WebpackAutoVersionPlugin {
     })
 
     complier.plugin('failed', (err) => {
+      console.log('fail')
       notifier.notify({
         title: 'WebpackAutoVersionPlugin',
         message: err.message
@@ -175,7 +183,7 @@ class WebpackAutoVersionPlugin {
     })
 
     if (complier.hooks) {
-      console.log('hooks')
+      // 兼容webpack ^4.0.0
       complier.hooks.compilation.tap('WebpackAutoVersionPlugin', (compliation) => {
         compliation.hooks.htmlWebpackPluginBeforeHtmlGeneration.tapAsync(
           'WebpackAutoVersionPlugin',
@@ -187,12 +195,13 @@ class WebpackAutoVersionPlugin {
         )
       })
     } else {
-      complier.plugin('compilation', (compliation) => {
-        compliation.plugin(
+      // 如果存在html-webpack-plugin 则监听
+      complier.plugin('compilation', (compilation) => {
+        compilation.plugin(
           'html-webpack-plugin-before-html-generation',
           htmlWebpackPluginBeforeHtmlGeneration(this)
         )
-        compliation.plugin(
+        compilation.plugin(
           'html-webpack-plugin-after-html-processing',
           htmlWebpackPluginAfterHtmlProcessing(this)
         )

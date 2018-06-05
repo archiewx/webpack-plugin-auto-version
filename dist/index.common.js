@@ -76,8 +76,16 @@ var WebpackAutoVersionPlugin = function WebpackAutoVersionPlugin() {
   this.init = function () {
     _this.pkgPath = _this.webpackConfig.context + '/package.json';
     _this.pkg = _this.readJsonFile(_this.pkgPath);
+    _this.fixPackageFile();
     _this.autoIncreaseVersion();
     _this.banner = _this.copyright + ' version ' + _this.newVersion + '   ' + new Date().toLocaleString();
+  };
+
+  this.fixPackageFile = function () {
+    // 判断version 是否存在
+    if (!_this.pkg.version) {
+      _this.pkg.version = '0.0.1';
+    }
   };
 
   this.readJsonFile = function (filePath) {
@@ -177,7 +185,6 @@ var WebpackAutoVersionPlugin = function WebpackAutoVersionPlugin() {
   };
 
   this.apply = function (complier) {
-    // 使用在HtmlWebpackPlugin插件前，无html资源
     var that = _this;
     _this.webpackConfig = complier.options;
     _this.init();
@@ -212,6 +219,7 @@ var WebpackAutoVersionPlugin = function WebpackAutoVersionPlugin() {
         }
       });
       compilation.assets = newAssets;
+      // 这里替换名称标记，增加了版本 todo: 需要增加判断
       compilation.chunks.forEach(function (chunk) {
         chunk.files = chunk.files.filter(function (filename) {
           return path.extname(filename) !== '.html';
@@ -225,6 +233,7 @@ var WebpackAutoVersionPlugin = function WebpackAutoVersionPlugin() {
     });
 
     complier.plugin('failed', function (err) {
+      console.log('fail');
       notifier.notify({
         title: 'WebpackAutoVersionPlugin',
         message: err.message
@@ -239,15 +248,16 @@ var WebpackAutoVersionPlugin = function WebpackAutoVersionPlugin() {
     });
 
     if (complier.hooks) {
-      console.log('hooks');
+      // 兼容webpack ^4.0.0
       complier.hooks.compilation.tap('WebpackAutoVersionPlugin', function (compliation) {
         compliation.hooks.htmlWebpackPluginBeforeHtmlGeneration.tapAsync('WebpackAutoVersionPlugin', htmlWebpackPluginBeforeHtmlGeneration(_this));
         compliation.hooks.htmlWebpackPluginAfterHtmlProcessing.tapAsync('WebpackAutoVersionPlugin', htmlWebpackPluginAfterHtmlProcessing(_this));
       });
     } else {
-      complier.plugin('compilation', function (compliation) {
-        compliation.plugin('html-webpack-plugin-before-html-generation', htmlWebpackPluginBeforeHtmlGeneration(_this));
-        compliation.plugin('html-webpack-plugin-after-html-processing', htmlWebpackPluginAfterHtmlProcessing(_this));
+      // 如果存在html-webpack-plugin 则监听
+      complier.plugin('compilation', function (compilation) {
+        compilation.plugin('html-webpack-plugin-before-html-generation', htmlWebpackPluginBeforeHtmlGeneration(_this));
+        compilation.plugin('html-webpack-plugin-after-html-processing', htmlWebpackPluginAfterHtmlProcessing(_this));
       });
     }
   };

@@ -17,25 +17,29 @@ var htmlWebpackPluginBeforeHtmlGeneration = (function (instance) {
   return function (data, cb) {
     // 监听html-webpack-plugin-before-html-generation
     var _data$assets = data.assets,
+        publicPath = _data$assets.publicPath,
         _data$assets$js = _data$assets.js,
         jsNames = _data$assets$js === undefined ? [] : _data$assets$js,
         _data$assets$css = _data$assets.css,
         cssNames = _data$assets$css === undefined ? [] : _data$assets$css;
 
+    var versionPath = publicPath ? "/" + instance.newVersion : instance.newVersion + "/";
     data.assets.js = jsNames.map(function (js) {
-      var filename = "/" + instance.newVersion + js;
-      var hasReplace = filename.indexOf(instance.newVersion) !== -1;
+      var filename = "" + versionPath + js;
+      // 判断js 是否已经替换成新版本
+      var hasReplace = js.indexOf(instance.newVersion) !== -1;
       if (hasReplace) {
         return js;
       }
       if (filenameMark) {
         return filename.replace(filenameMark, instance.newVersion);
       }
-      return "/" + instance.newVersion + js;
+      return filename;
     });
     data.assets.css = cssNames.map(function (css) {
-      var filename = "/" + instance.newVersion + css;
-      var hasReplace = filename.indexOf(instance.newVersion) !== -1;
+      var filename = "" + versionPath + css;
+      // 判断css 是否已经替换成新版本
+      var hasReplace = css.indexOf(instance.newVersion) !== -1;
       if (hasReplace) {
         return css;
       }
@@ -44,7 +48,7 @@ var htmlWebpackPluginBeforeHtmlGeneration = (function (instance) {
       }
       return filename;
     });
-    cb();
+    cb(null, data);
   };
 });
 
@@ -58,6 +62,12 @@ var htmlWebpackPluginAfterHtmlProcessing = (function (instance) {
       data.html = versionTag + os.EOL + data.html;
     }
     cb(null, data);
+  };
+});
+
+var htmlWebpackPluginAlterAssetTags = (function () {
+  return function (data, cb) {
+    return cb(null, data);
   };
 });
 
@@ -171,6 +181,9 @@ var WebpackAutoVersionPlugin = function WebpackAutoVersionPlugin() {
 
   this.injectHtml = function (asset) {
     var versionTag = '<!--  ' + _this.banner + '   -->';
+    if (asset.source().toString().startsWith('<!--')) {
+      return;
+    }
     var source = versionTag + os.EOL + asset.source();
     asset.source = function () {
       return source;
@@ -252,11 +265,13 @@ var WebpackAutoVersionPlugin = function WebpackAutoVersionPlugin() {
       complier.hooks.compilation.tap('WebpackAutoVersionPlugin', function (compliation) {
         compliation.hooks.htmlWebpackPluginBeforeHtmlGeneration.tapAsync('WebpackAutoVersionPlugin', htmlWebpackPluginBeforeHtmlGeneration(_this));
         compliation.hooks.htmlWebpackPluginAfterHtmlProcessing.tapAsync('WebpackAutoVersionPlugin', htmlWebpackPluginAfterHtmlProcessing(_this));
+        compliation.hooks.htmlWebpackPluginAlterAssetTags.tapAsync('WebpackAutoVersionPlugin', htmlWebpackPluginAlterAssetTags(_this));
       });
     } else {
       // 如果存在html-webpack-plugin 则监听
       complier.plugin('compilation', function (compilation) {
         compilation.plugin('html-webpack-plugin-before-html-generation', htmlWebpackPluginBeforeHtmlGeneration(_this));
+        compilation.plugin('html-webpack-plugin-alter-asset-tags', htmlWebpackPluginAlterAssetTags(_this));
         compilation.plugin('html-webpack-plugin-after-html-processing', htmlWebpackPluginAfterHtmlProcessing(_this));
       });
     }

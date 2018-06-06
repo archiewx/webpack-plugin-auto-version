@@ -1,18 +1,21 @@
 # 自动版本管理
 
-以 webpack 插件方式执行 
+以 webpack 插件方式执行
 
 ![](http://ojgquc007.bkt.clouddn.com/dragon-qiniu/1526538819370.jpg)
 
 ## feature
 
-* 自动插入 js,css,html 首行版本标记(完成和HtmlWebpackPlugin兼容)
-* 自动版本目录管理
-* 自动清理旧版本目录
-* 支持标签配置，动态替换版本
-* 支持[version]名称，能够动态替换资源名称中版本标签，例如[version].[name].xx 会自动替换 v3.2.2.main.xx
-* 打包报错，命令行toast提示
-* 支持 -- patch, -- minor, -- major 命令方式打包
+- 自动插入 js,css,html 首行版本标记(完成和 HtmlWebpackPlugin 兼容)
+- 自动版本目录管理
+- 自动清理旧版本目录
+- 支持标签配置，动态替换版本
+- 支持[version]名称，能够动态替换资源名称中版本标签，例如[version].[name].xx 会自动替换
+  v3.2.2.main.xx
+- 打包报错，命令行 toast 提示
+- 支持 -- patch, -- minor, -- major 命令方式打包
+- 兼容 roadhogv2.0 以上
+- 兼容 webpack4.0
 
 ## 使用方法
 
@@ -59,16 +62,39 @@ options:
 
 ```json
 {
-  template: "[VERSION]version[/VERSION]"
+  "template": "[VERSION]version[/VERSION]"
 }
 ```
+
+## roadhog 用法
+
+roadhog 初始化会在`public`目录下有一个 index.html，该文件默认资源信息都是 link 和 script 都是
+index，在 build 的时候，直接复制过去了，so 做法:
+
+### 新建 index.ejs(不能是 index.html,详细见:[#709](https://github.com/sorrycc/roadhog/issues/709))
+
+### 建立 webpack.config.js
+
+```js
+const WebpackPluginAutoPlugin = require('webpack-plugin-auto-version')
+
+module.exports = (config) => {
+  if (process.env.NODE_ENV === 'production') {
+    config.plugins.push(new WebpackPluginAutoPlugin())
+  }
+  return config
+}
+```
+
+### 然后版本就可以正确看到啦。
+
+![](http://ojgquc007.bkt.clouddn.com/dragon-qiniu/1528278030906.jpg)
 
 template 会被自动替换成和 package.json 对应的版本号
 
 ## next
 
-* 支持 .editconfig 配置文件
-* 支持配置package.json 配置文件，支持多项目
-* 支持开发环境
-* 支持webpack钩子函数
-* 修复和roadhog 兼容(糟心的东西，没触发html-webpack-plugin 钩子)
+- 支持 .editconfig 配置文件
+- 支持配置 package.json 配置文件，支持多项目
+- 支持开发环境
+- 支持 webpack 钩子函数

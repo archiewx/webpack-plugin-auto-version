@@ -7,6 +7,7 @@ import rimraf from 'rimraf'
 import notifier from 'node-notifier'
 import htmlWebpackPluginBeforeHtmlGeneration from './events/htmlWebpackPluginBeforeHtmlGeneration'
 import htmlWebpackPluginAfterHtmlProcessing from './events/htmlWebpackPluginAfterHtmlProcessing'
+import htmlWebpackPluginAlterAssetTags from './events/htmlWebpackPluginAlterAssetTags'
 
 class WebpackAutoVersionPlugin {
   constructor(options = {}) {
@@ -113,6 +114,14 @@ class WebpackAutoVersionPlugin {
   }
   injectHtml = (asset) => {
     const versionTag = `<!--  ${this.banner}   -->`
+    if (
+      asset
+        .source()
+        .toString()
+        .startsWith('<!--')
+    ) {
+      return
+    }
     const source = versionTag + endOfLine + asset.source()
     asset.source = () => source
   }
@@ -193,6 +202,10 @@ class WebpackAutoVersionPlugin {
           'WebpackAutoVersionPlugin',
           htmlWebpackPluginAfterHtmlProcessing(this)
         )
+        compliation.hooks.htmlWebpackPluginAlterAssetTags.tapAsync(
+          'WebpackAutoVersionPlugin',
+          htmlWebpackPluginAlterAssetTags(this)
+        )
       })
     } else {
       // 如果存在html-webpack-plugin 则监听
@@ -200,6 +213,10 @@ class WebpackAutoVersionPlugin {
         compilation.plugin(
           'html-webpack-plugin-before-html-generation',
           htmlWebpackPluginBeforeHtmlGeneration(this)
+        )
+        compilation.plugin(
+          'html-webpack-plugin-alter-asset-tags',
+          htmlWebpackPluginAlterAssetTags(this)
         )
         compilation.plugin(
           'html-webpack-plugin-after-html-processing',

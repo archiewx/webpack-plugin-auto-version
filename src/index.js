@@ -194,18 +194,21 @@ class WebpackAutoVersionPlugin {
     if (complier.hooks) {
       // 兼容webpack ^4.0.0
       complier.hooks.compilation.tap('WebpackAutoVersionPlugin', (compliation) => {
-        compliation.hooks.htmlWebpackPluginBeforeHtmlGeneration.tapAsync(
-          'WebpackAutoVersionPlugin',
-          htmlWebpackPluginBeforeHtmlGeneration(this)
-        )
-        compliation.hooks.htmlWebpackPluginAfterHtmlProcessing.tapAsync(
-          'WebpackAutoVersionPlugin',
-          htmlWebpackPluginAfterHtmlProcessing(this)
-        )
-        compliation.hooks.htmlWebpackPluginAlterAssetTags.tapAsync(
-          'WebpackAutoVersionPlugin',
-          htmlWebpackPluginAlterAssetTags(this)
-        )
+        compliation.hooks.htmlWebpackPluginBeforeHtmlGeneration &&
+          compliation.hooks.htmlWebpackPluginBeforeHtmlGeneration.tapAsync(
+            'WebpackAutoVersionPlugin',
+            htmlWebpackPluginBeforeHtmlGeneration(this)
+          )
+        compliation.hooks.htmlWebpackPluginAlterAssetTags &&
+          compliation.hooks.htmlWebpackPluginAlterAssetTags.tapAsync(
+            'WebpackAutoVersionPlugin',
+            htmlWebpackPluginAlterAssetTags(this)
+          )
+        compliation.hooks.htmlWebpackPluginAfterHtmlProcessing &&
+          compliation.hooks.htmlWebpackPluginAfterHtmlProcessing.tapAsync(
+            'WebpackAutoVersionPlugin',
+            htmlWebpackPluginAfterHtmlProcessing(this)
+          )
       })
     } else {
       // 如果存在html-webpack-plugin 则监听

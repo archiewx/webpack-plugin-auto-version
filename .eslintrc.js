@@ -1,4 +1,8 @@
 module.exports = {
   extends: ['airbnb-base-extend/eslint-config-utils'],
-  rules: { 'arrow-parens': ['error', 'always'], 'function-paren-newline': [0] }
+  rules: {
+    'arrow-parens': ['error', 'always'],
+    'function-paren-newline': [0],
+    'no-unused-expressions': [0]
+  }
 }

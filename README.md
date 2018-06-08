@@ -1,5 +1,11 @@
 # 自动版本管理
 
+[![](https://img.shields.io/npm/v/webpack-plugin-auto-version.svg?style=flat-square)](https://www.npmjs.com/package/webpack-plugin-auto-version)
+[![](https://img.shields.io/github/commit-activity/y/zsirfs/webpack-plugin-auto-version.svg?style=flat-square)](https://www.npmjs.com/package/webpack-plugin-auto-version)
+[![](https://img.shields.io/github/last-commit/zsirfs/webpack-plugin-auto-version/master.svg?style=flat-square)](https://github.com/zsirfs/webpack-plugin-auto-version)
+[![](https://img.shields.io/npm/l/webpack-plugin-auto-version.svg?style=flat-square)](https://github.com/zsirfs/webpack-plugin-auto-version)
+[![](https://img.shields.io/github/commit-activity/y/zsirfs/webpack-plugin-auto-version.svg?style=flat-square)](https://github.com/zsirfs/webpack-plugin-auto-version)
+
 以 webpack 插件方式执行
 
 ![](http://ojgquc007.bkt.clouddn.com/dragon-qiniu/1526538819370.jpg)

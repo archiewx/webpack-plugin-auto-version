@@ -87,7 +87,9 @@ const WebpackPluginAutoPlugin = require('webpack-plugin-auto-version')
 
 module.exports = (config) => {
   if (process.env.NODE_ENV === 'production') {
-    config.plugins.push(new WebpackPluginAutoPlugin())
+    config.plugins.push(new WebpackPluginAutoPlugin({
+      isAsyncJs: true
+    }))
   }
   return config
 }

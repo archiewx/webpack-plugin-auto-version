@@ -20,7 +20,7 @@
   v3.2.2.main.xx
 - 打包报错，命令行 toast 提示
 - 支持 -- patch, -- minor, -- major 命令方式打包
-- 兼容 roadhogv2.0 以上(如果使用动态导入则需要isAsyncJs为true)
+- 兼容 roadhogv2.0 以上(如果使用动态导入则需要 isAsyncJs 为 true)
 - 兼容 webpack4.0
 
 ## 使用方法
@@ -44,8 +44,9 @@ module.exports = {
       // 自定义资源内版本替换模板 [VERSION]version[/VERSION]
       template: options.template || `[${this.copyright}]version[/${this.copyright}]`,
       // 自定义忽略后缀，默认是['.html']忽略html文件打入版本文件夹
-      ignoreSuffix: [],
-      isAsyncJs: false
+      ignoreSuffix: [], // 忽略的后缀或者文件关键词
+      isAsyncJs: false,
+      htmlTempSuffix: ['.html', '.vm', '.ejs', '.handlbars']
     })
   ]
 }
@@ -87,9 +88,11 @@ const WebpackPluginAutoPlugin = require('webpack-plugin-auto-version')
 
 module.exports = (config) => {
   if (process.env.NODE_ENV === 'production') {
-    config.plugins.push(new WebpackPluginAutoPlugin({
-      isAsyncJs: true
-    }))
+    config.plugins.push(
+      new WebpackPluginAutoPlugin({
+        isAsyncJs: true
+      })
+    )
   }
   return config
 }
@@ -110,7 +113,12 @@ template 会被自动替换成和 package.json 对应的版本号
 
 ## change log
 
+### v1.2.1
+
+- 修复与webpack-copy-plugin兼容问题
+- 增加htmlTempSuffix选项
+
 ### v1.2.0
 
- * 增加对roadhog支持
- * 修复部分问题
+- 增加对 roadhog 支持
+- 修复部分问题

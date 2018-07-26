@@ -174,6 +174,7 @@ class WebpackAutoVersionPlugin {
         const asset = compilation.assets[filename]
         injectVersionByTemp(asset, that.template, that.newVersion)
         const newFilename = that.replaceVersionTag(filename)
+        const existKeyword = that.ignoreSuffix.find((keyword) => filename.indexOf(keyword) !== -1)
         switch (ext) {
           case '.js':
             newAssets[`${version}/${newFilename}`] = asset
@@ -185,7 +186,11 @@ class WebpackAutoVersionPlugin {
             break
           default:
             // 忽略的路径或路径中包含输入路径(兼容webpack-copy-plugin)
-            if (that.ignoreSuffix.indexOf(ext) !== -1 || filename.indexOf(outputPath) !== -1) {
+            if (
+              that.ignoreSuffix.concat(that.htmlTempSuffix).indexOf(ext) !== -1 ||
+              filename.indexOf(outputPath) !== -1 ||
+              existKeyword
+            ) {
               // 不需要移动到版本号文件夹内
               newAssets[newFilename] = asset
               // 在html语法模板后缀中则注入执行

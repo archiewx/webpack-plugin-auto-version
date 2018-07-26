@@ -71,17 +71,154 @@ var htmlWebpackPluginAlterAssetTags = (function () {
   };
 });
 
+/**
+ * css注入内容
+ * @param {any} asset
+ * @memberof WebpackAutoVersionPlugin
+ */
+function injectCssBanner(asset, banner) {
+  var versionTag = '/**  ' + banner + '   */';
+  var source = versionTag + os.EOL + asset.source();
+  asset.source = function () {
+    return source;
+  };
+}
+
+/**
+ * html内注入内容
+ * @param {any} asset
+ * @memberof WebpackAutoVersionPlugin
+ */
+function injectHtmlBanner(asset, banner) {
+  var versionTag = '<!--  ' + banner + '   -->';
+  if (asset.source().toString().startsWith('<!--')) {
+    return;
+  }
+  var source = versionTag + os.EOL + asset.source();
+  asset.source = function () {
+    return source;
+  };
+}
+
+/**
+ * js文件内注入内容
+ * @param {any} asset
+ * @memberof WebpackAutoVersionPlugin
+ */
+function injectJsBanner(asset, banner) {
+  var versionTag = '/**  ' + banner + ' */';
+  var source = versionTag + os.EOL + asset.source();
+  asset.source = function () {
+    return source;
+  };
+}
+
+/**
+ * 替换代码中[Version]
+ * @param {any} asset
+ * @memberof WebpackAutoVersionPlugin
+ */
+function injectVersionByTemp(asset, template, version) {
+  var source = asset.source();
+  if (typeof source !== 'string') {
+    return;
+  }
+  asset.source = function () {
+    return source.replace(template, version);
+  };
+}
+
 var classCallCheck = function (instance, Constructor) {
   if (!(instance instanceof Constructor)) {
     throw new TypeError("Cannot call a class as a function");
   }
 };
 
-var WebpackAutoVersionPlugin = function WebpackAutoVersionPlugin() {
-  var _this = this;
+/**
+ * @class WebpackAutoVersionPlugin
+ */
 
+var WebpackAutoVersionPlugin =
+/**
+ *Creates an instance of WebpackAutoVersionPlugin.
+ * @param {OptionType} [options={}]
+ * @memberof WebpackAutoVersionPlugin
+ */
+function WebpackAutoVersionPlugin() {
   var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
   classCallCheck(this, WebpackAutoVersionPlugin);
+
+  _initialiseProps.call(this);
+
+  // 文件名替换标记 [version] -> v1.2.2
+  this.filenameMark = options.filenameMark;
+  // 版权名称
+  this.copyright = options.copyright || '[webpack-plugin-auto-version]';
+  // package.json路径
+  this.pkgPath = '';
+  // package.json内容
+  this.pkg = '';
+  // 保存的时候格式化package.json的indent
+  this.space = options.space || 2;
+  // 是否自动清理老版本
+  this.cleanup = options.cleanup || false;
+  // 是否检测资源内的标签
+  this.inspectContent = options.inspectContent || true;
+  // 自定义资源内版本替换模板 [VERSION]version[/VERSION]
+  this.template = options.template || '[' + this.copyright + ']version[/' + this.copyright + ']';
+  this.ignoreSuffix = options.ignoreSuffix || ['.html'];
+  this.isAsyncJs = options.isAsyncJs;
+}
+/**
+ * 初始化
+ *
+ * @memberof WebpackAutoVersionPlugin
+ */
+
+/**
+ * 文件类是否存在version字段，不存在则创建
+ *
+ * @memberof WebpackAutoVersionPlugin
+ */
+
+/**
+ * 读取package.json文件
+ * @param {string} filePath
+ * @memberof WebpackAutoVersionPlugin
+ */
+
+/**
+ * 清楚旧版本文件夹
+ * @memberof WebpackAutoVersionPlugin
+ */
+
+/**
+ * 版本自动增加
+ *
+ * @memberof WebpackAutoVersionPlugin
+ */
+
+/**
+ * 在package.json 写入修改后的版本号
+ * @memberof WebpackAutoVersionPlugin
+ */
+
+/**
+ * 替换名字中[version]标记
+ * @param {string} filename
+ * @memberof WebpackAutoVersionPlugin
+ */
+
+
+/**
+ * webpack 暴露加载插件的方法
+ * @param {any} complier
+ * @memberof WebpackAutoVersionPlugin
+ */
+;
+
+var _initialiseProps = function _initialiseProps() {
+  var _this = this;
 
   this.init = function () {
     _this.pkgPath = _this.webpackConfig.context + '/package.json';
@@ -101,19 +238,6 @@ var WebpackAutoVersionPlugin = function WebpackAutoVersionPlugin() {
   this.readJsonFile = function (filePath) {
     var json = fs.readFileSync(filePath);
     return JSON.parse(json);
-  };
-
-  this.injectContent = function (asset) {
-    if (!_this.inspectContent) {
-      return;
-    }
-    var source = asset.source();
-    if (typeof source !== 'string') {
-      return;
-    }
-    asset.source = function () {
-      return source.replace(_this.template, _this.newVersion);
-    };
   };
 
   this.cleanupOldVersion = function () {
@@ -163,33 +287,6 @@ var WebpackAutoVersionPlugin = function WebpackAutoVersionPlugin() {
     fs.writeFileSync(_this.pkgPath, pkgStr);
   };
 
-  this.injectJs = function (asset) {
-    var versionTag = '/**  ' + _this.banner + '*/';
-    var source = versionTag + os.EOL + asset.source();
-    asset.source = function () {
-      return source;
-    };
-  };
-
-  this.injectCss = function (asset) {
-    var versionTag = '/**  ' + _this.banner + '   */';
-    var source = versionTag + os.EOL + asset.source();
-    asset.source = function () {
-      return source;
-    };
-  };
-
-  this.injectHtml = function (asset) {
-    var versionTag = '<!--  ' + _this.banner + '   -->';
-    if (asset.source().toString().startsWith('<!--')) {
-      return;
-    }
-    var source = versionTag + os.EOL + asset.source();
-    asset.source = function () {
-      return source;
-    };
-  };
-
   this.replaceVersionTag = function (filename) {
     if (!_this.filenameMark) {
       return filename;
@@ -197,33 +294,41 @@ var WebpackAutoVersionPlugin = function WebpackAutoVersionPlugin() {
     return filename.replace(_this.filenameMark, 'v' + _this.pkg.version);
   };
 
+  this.resetOptions = function (options) {
+    if (_this.isAsyncJs) {
+      options.output = Object.assign(options.output, { publicPath: _this.newVersion + '/' });
+    }
+  };
+
   this.apply = function (complier) {
-    var that = _this;
     _this.webpackConfig = complier.options;
+    // 修改publicPath
     _this.init();
+    _this.resetOptions(complier.options);
     var version = _this.pkg.version;
 
+    var that = _this;
     complier.plugin('emit', function (compilation, callback) {
       var newAssets = {};
       Object.keys(compilation.assets).forEach(function (filename) {
         // 得到每一个资源
         var ext = path.extname(filename);
         var asset = compilation.assets[filename];
-        that.injectContent(asset);
+        injectVersionByTemp(asset, that.template, that.newVersion);
         var newFilename = that.replaceVersionTag(filename);
         switch (ext) {
           case '.js':
             newAssets[version + '/' + newFilename] = asset;
-            that.injectJs(asset);
+            injectJsBanner(asset, that.banner);
             break;
           case '.css':
             newAssets[version + '/' + newFilename] = asset;
-            that.injectCss(asset);
+            injectCssBanner(asset, that.banner);
             break;
           default:
             if (that.ignoreSuffix.indexOf(ext) !== -1) {
               newAssets[newFilename] = asset;
-              that.injectHtml(asset);
+              injectHtmlBanner(asset, that.banner);
               // 替换文件中资源
             } else {
               newAssets[version + '/' + newFilename] = asset;
@@ -231,8 +336,9 @@ var WebpackAutoVersionPlugin = function WebpackAutoVersionPlugin() {
             break;
         }
       });
+      // console.log('keys', Object.keys(compilation.assets))
       compilation.assets = newAssets;
-      // 这里替换名称标记，增加了版本 todo: 需要增加判断
+      // 这里替换名称标记，增加了版本
       compilation.chunks.forEach(function (chunk) {
         chunk.files = chunk.files.filter(function (filename) {
           return path.extname(filename) !== '.html';
@@ -241,6 +347,7 @@ var WebpackAutoVersionPlugin = function WebpackAutoVersionPlugin() {
         }).concat(chunk.files.filter(function (filename) {
           return path.extname(filename) === '.html';
         }));
+        // console.log('chunks', chunk.files)
       });
       callback();
     });
@@ -263,9 +370,9 @@ var WebpackAutoVersionPlugin = function WebpackAutoVersionPlugin() {
     if (complier.hooks) {
       // 兼容webpack ^4.0.0
       complier.hooks.compilation.tap('WebpackAutoVersionPlugin', function (compliation) {
-        compliation.hooks.htmlWebpackPluginBeforeHtmlGeneration.tapAsync('WebpackAutoVersionPlugin', htmlWebpackPluginBeforeHtmlGeneration(_this));
-        compliation.hooks.htmlWebpackPluginAfterHtmlProcessing.tapAsync('WebpackAutoVersionPlugin', htmlWebpackPluginAfterHtmlProcessing(_this));
-        compliation.hooks.htmlWebpackPluginAlterAssetTags.tapAsync('WebpackAutoVersionPlugin', htmlWebpackPluginAlterAssetTags(_this));
+        compliation.hooks.htmlWebpackPluginBeforeHtmlGeneration && compliation.hooks.htmlWebpackPluginBeforeHtmlGeneration.tapAsync('WebpackAutoVersionPlugin', htmlWebpackPluginBeforeHtmlGeneration(_this));
+        compliation.hooks.htmlWebpackPluginAlterAssetTags && compliation.hooks.htmlWebpackPluginAlterAssetTags.tapAsync('WebpackAutoVersionPlugin', htmlWebpackPluginAlterAssetTags(_this));
+        compliation.hooks.htmlWebpackPluginAfterHtmlProcessing && compliation.hooks.htmlWebpackPluginAfterHtmlProcessing.tapAsync('WebpackAutoVersionPlugin', htmlWebpackPluginAfterHtmlProcessing(_this));
       });
     } else {
       // 如果存在html-webpack-plugin 则监听
@@ -276,26 +383,6 @@ var WebpackAutoVersionPlugin = function WebpackAutoVersionPlugin() {
       });
     }
   };
-
-  // 文件名替换标记 [version] -> v1.2.2
-  this.filenameMark = options.filenameMark;
-  // 版权名称
-  this.copyright = options.copyright || 'VERSION';
-  // package.json路径
-  this.pkgPath = '';
-  // package.json内容
-  this.pkg = '';
-  // 保存的时候格式化package.json的indent
-  this.space = options.space || 2;
-  // 是否自动清理老版本
-  this.cleanup = options.cleanup || false;
-  // 是否检测资源内的标签
-  this.inspectContent = options.inspectContent || true;
-  // 自定义资源内版本替换模板 [VERSION]version[/VERSION]
-  this.template = options.template || '[' + this.copyright + ']version[/' + this.copyright + ']';
-  this.ignoreSuffix = options.ignoreSuffix || ['.html'];
-}
-// 清理以前版本
-;
+};
 
 module.exports = WebpackAutoVersionPlugin;

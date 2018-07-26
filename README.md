@@ -20,7 +20,7 @@
   v3.2.2.main.xx
 - 打包报错，命令行 toast 提示
 - 支持 -- patch, -- minor, -- major 命令方式打包
-- 兼容 roadhogv2.0 以上
+- 兼容 roadhogv2.0 以上(如果使用动态导入则需要isAsyncJs为true)
 - 兼容 webpack4.0
 
 ## 使用方法
@@ -34,7 +34,7 @@ module.exports = {
       // 文件名替换标记 [version] -> v1.2.2
       filenameMark: options.filenameMark,
       // 版权名称
-      copyright: options.copyright || 'VERSION',
+      copyright: options.copyright || '[webpack-plugin-auto-version]',
       // 保存的时候格式化package.json的indent
       space: options.space || 2,
       // 是否自动清理老版本
@@ -44,7 +44,8 @@ module.exports = {
       // 自定义资源内版本替换模板 [VERSION]version[/VERSION]
       template: options.template || `[${this.copyright}]version[/${this.copyright}]`,
       // 自定义忽略后缀，默认是['.html']忽略html文件打入版本文件夹
-      ignoreSuffix: []
+      ignoreSuffix: [],
+      isAsyncJs: false
     })
   ]
 }

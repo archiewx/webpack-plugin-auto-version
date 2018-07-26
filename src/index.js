@@ -1,6 +1,5 @@
 import path from 'path'
 import fs from 'fs'
-import { EOL as endOfLine } from 'os'
 import yargs from 'yargs'
 import semver from 'semver'
 import rimraf from 'rimraf'
@@ -8,13 +7,25 @@ import notifier from 'node-notifier'
 import htmlWebpackPluginBeforeHtmlGeneration from './events/htmlWebpackPluginBeforeHtmlGeneration'
 import htmlWebpackPluginAfterHtmlProcessing from './events/htmlWebpackPluginAfterHtmlProcessing'
 import htmlWebpackPluginAlterAssetTags from './events/htmlWebpackPluginAlterAssetTags'
+import { injectCssBanner } from './injects/injectCss'
+import { injectHtmlBanner } from './injects/injectHtml'
+import { injectJsBanner } from './injects/injectJs'
+import { injectVersionByTemp } from './injects/injectContent'
 
+/**
+ * @class WebpackAutoVersionPlugin
+ */
 class WebpackAutoVersionPlugin {
+  /**
+   *Creates an instance of WebpackAutoVersionPlugin.
+   * @param {OptionType} [options={}]
+   * @memberof WebpackAutoVersionPlugin
+   */
   constructor(options = {}) {
     // 文件名替换标记 [version] -> v1.2.2
     this.filenameMark = options.filenameMark
     // 版权名称
-    this.copyright = options.copyright || 'VERSION'
+    this.copyright = options.copyright || '[webpack-plugin-auto-version]'
     // package.json路径
     this.pkgPath = ''
     // package.json内容
@@ -28,7 +39,13 @@ class WebpackAutoVersionPlugin {
     // 自定义资源内版本替换模板 [VERSION]version[/VERSION]
     this.template = options.template || `[${this.copyright}]version[/${this.copyright}]`
     this.ignoreSuffix = options.ignoreSuffix || ['.html']
+    this.isAsyncJs = options.isAsyncJs
   }
+  /**
+   * 初始化
+   *
+   * @memberof WebpackAutoVersionPlugin
+   */
   init = () => {
     this.pkgPath = `${this.webpackConfig.context}/package.json`
     this.pkg = this.readJsonFile(this.pkgPath)
@@ -36,27 +53,30 @@ class WebpackAutoVersionPlugin {
     this.autoIncreaseVersion()
     this.banner = `${this.copyright} version ${this.newVersion}   ${new Date().toLocaleString()}`
   }
+  /**
+   * 文件类是否存在version字段，不存在则创建
+   *
+   * @memberof WebpackAutoVersionPlugin
+   */
   fixPackageFile = () => {
     // 判断version 是否存在
     if (!this.pkg.version) {
       this.pkg.version = '0.0.1'
     }
   }
+  /**
+   * 读取package.json文件
+   * @param {string} filePath
+   * @memberof WebpackAutoVersionPlugin
+   */
   readJsonFile = (filePath) => {
     const json = fs.readFileSync(filePath)
     return JSON.parse(json)
   }
-  injectContent = (asset) => {
-    if (!this.inspectContent) {
-      return
-    }
-    const source = asset.source()
-    if (typeof source !== 'string') {
-      return
-    }
-    asset.source = () => source.replace(this.template, this.newVersion)
-  }
-  // 清理以前版本
+  /**
+   * 清楚旧版本文件夹
+   * @memberof WebpackAutoVersionPlugin
+   */
   cleanupOldVersion = () => {
     if (!this.cleanup) {
       return
@@ -80,6 +100,11 @@ class WebpackAutoVersionPlugin {
         }
       })
   }
+  /**
+   * 版本自动增加
+   *
+   * @memberof WebpackAutoVersionPlugin
+   */
   autoIncreaseVersion = () => {
     const { _ } = yargs.argv
     const { version } = this.pkg
@@ -98,33 +123,19 @@ class WebpackAutoVersionPlugin {
     this.newVersion = semver.inc(version, 'patch')
     this.pkg.version = this.newVersion
   }
+  /**
+   * 在package.json 写入修改后的版本号
+   * @memberof WebpackAutoVersionPlugin
+   */
   persistVersion = () => {
     const pkgStr = JSON.stringify(this.pkg, null, this.space)
     fs.writeFileSync(this.pkgPath, pkgStr)
   }
-  injectJs = (asset) => {
-    const versionTag = `/**  ${this.banner}*/`
-    const source = versionTag + endOfLine + asset.source()
-    asset.source = () => source
-  }
-  injectCss = (asset) => {
-    const versionTag = `/**  ${this.banner}   */`
-    const source = versionTag + endOfLine + asset.source()
-    asset.source = () => source
-  }
-  injectHtml = (asset) => {
-    const versionTag = `<!--  ${this.banner}   -->`
-    if (
-      asset
-        .source()
-        .toString()
-        .startsWith('<!--')
-    ) {
-      return
-    }
-    const source = versionTag + endOfLine + asset.source()
-    asset.source = () => source
-  }
+  /**
+   * 替换名字中[version]标记
+   * @param {string} filename
+   * @memberof WebpackAutoVersionPlugin
+   */
   replaceVersionTag = (filename) => {
     if (!this.filenameMark) {
       return filename
@@ -132,32 +143,45 @@ class WebpackAutoVersionPlugin {
     return filename.replace(this.filenameMark, `v${this.pkg.version}`)
   }
 
+  resetOptions = (options) => {
+    if (this.isAsyncJs) {
+      options.output = Object.assign(options.output, { publicPath: this.newVersion + '/' })
+    }
+  }
+
+  /**
+   * webpack 暴露加载插件的方法
+   * @param {any} complier
+   * @memberof WebpackAutoVersionPlugin
+   */
   apply = (complier) => {
-    const that = this
     this.webpackConfig = complier.options
+    // 修改publicPath
     this.init()
+    this.resetOptions(complier.options)
     const { version } = this.pkg
+    const that = this
     complier.plugin('emit', (compilation, callback) => {
       const newAssets = {}
       Object.keys(compilation.assets).forEach((filename) => {
         // 得到每一个资源
         const ext = path.extname(filename)
         const asset = compilation.assets[filename]
-        that.injectContent(asset)
+        injectVersionByTemp(asset, that.template, that.newVersion)
         const newFilename = that.replaceVersionTag(filename)
         switch (ext) {
           case '.js':
             newAssets[`${version}/${newFilename}`] = asset
-            that.injectJs(asset)
+            injectJsBanner(asset, that.banner)
             break
           case '.css':
             newAssets[`${version}/${newFilename}`] = asset
-            that.injectCss(asset)
+            injectCssBanner(asset, that.banner)
             break
           default:
             if (that.ignoreSuffix.indexOf(ext) !== -1) {
               newAssets[newFilename] = asset
-              that.injectHtml(asset)
+              injectHtmlBanner(asset, that.banner)
               // 替换文件中资源
             } else {
               newAssets[`${version}/${newFilename}`] = asset
@@ -165,13 +189,15 @@ class WebpackAutoVersionPlugin {
             break
         }
       })
+      // console.log('keys', Object.keys(compilation.assets))
       compilation.assets = newAssets
-      // 这里替换名称标记，增加了版本 todo: 需要增加判断
+      // 这里替换名称标记，增加了版本
       compilation.chunks.forEach((chunk) => {
         chunk.files = chunk.files
           .filter((filename) => path.extname(filename) !== '.html')
           .map((filename) => `${version}/${that.replaceVersionTag(filename)}`)
           .concat(chunk.files.filter((filename) => path.extname(filename) === '.html'))
+        // console.log('chunks', chunk.files)
       })
       callback()
     })

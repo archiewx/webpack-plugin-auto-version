@@ -2,13 +2,14 @@
 
 import * as webpack from 'webpack'
 
-declare type OptionType = {
+declare interface OptionType {
   filenameMark: string
   copyright: string
   space?: number
   cleanup?: boolean
   inspectContent?: boolean
-  template?: string
+  template?: string,
+  isAsyncJs: boolean
 }
 
 declare class WebpackAutoVersionPlugin {
@@ -23,6 +24,7 @@ declare class WebpackAutoVersionPlugin {
   banner: string
   newVersion: string
   webpackConfig: webpack.Configuration
+  isAsyncJs: boolean
 
   private constructor(options: OptionType)
 

@@ -227,7 +227,7 @@ var _initialiseProps = function _initialiseProps() {
     _this.pkg = _this.readJsonFile(_this.pkgPath);
     _this.fixPackageFile();
     _this.autoIncreaseVersion();
-    _this.banner = _this.copyright + ' version ' + _this.newVersion + '   ' + new Date().toLocaleString();
+    _this.banner = _this.copyright + ' ' + _this.newVersion + '   ' + new Date().toLocaleString();
   };
 
   this.fixPackageFile = function () {
@@ -319,18 +319,29 @@ var _initialiseProps = function _initialiseProps() {
         var asset = compilation.assets[filename];
         injectVersionByTemp(asset, that.template, that.newVersion);
         var newFilename = that.replaceVersionTag(filename);
+        var existKeyword = that.ignoreSuffix.find(function (keyword) {
+          return filename.indexOf(keyword) !== -1;
+        });
         switch (ext) {
           case '.js':
-            newAssets[version + '/' + newFilename] = asset;
+            if (existKeyword) {
+              newAssets[newFilename] = asset;
+            } else {
+              newAssets[version + '/' + newFilename] = asset;
+            }
             injectJsBanner(asset, that.banner);
             break;
           case '.css':
-            newAssets[version + '/' + newFilename] = asset;
+            if (existKeyword) {
+              newAssets[newFilename] = asset;
+            } else {
+              newAssets[version + '/' + newFilename] = asset;
+            }
             injectCssBanner(asset, that.banner);
             break;
           default:
             // 忽略的路径或路径中包含输入路径(兼容webpack-copy-plugin)
-            if (that.ignoreSuffix.indexOf(ext) !== -1 || filename.indexOf(outputPath) !== -1) {
+            if (that.ignoreSuffix.concat(that.htmlTempSuffix).indexOf(ext) !== -1 || filename.indexOf(outputPath) !== -1 || existKeyword) {
               // 不需要移动到版本号文件夹内
               newAssets[newFilename] = asset;
               // 在html语法模板后缀中则注入执行
@@ -345,21 +356,22 @@ var _initialiseProps = function _initialiseProps() {
       // console.log('keys', Object.keys(compilation.assets))
       compilation.assets = newAssets;
       // 这里替换名称标记，增加了版本
-      compilation.chunks.forEach(function (chunk) {
-        chunk.files = chunk.files.filter(function (filename) {
-          return path.extname(filename) !== '.html';
-        }).map(function (filename) {
-          return version + '/' + that.replaceVersionTag(filename);
-        }).concat(chunk.files.filter(function (filename) {
-          return path.extname(filename) === '.html';
-        }));
-        // console.log('chunks', chunk.files)
-      });
+      if (that.filenameMark) {
+        compilation.chunks.forEach(function (chunk) {
+          chunk.files = chunk.files.filter(function (filename) {
+            return path.extname(filename) !== '.html';
+          }).map(function (filename) {
+            return version + '/' + that.replaceVersionTag(filename);
+          }).concat(chunk.files.filter(function (filename) {
+            return path.extname(filename) === '.html';
+          }));
+        });
+      }
       callback();
     });
 
     complier.plugin('failed', function (err) {
-      console.log('fail');
+      console.error('fail');
       notifier.notify({
         title: 'WebpackAutoVersionPlugin',
         message: err.message

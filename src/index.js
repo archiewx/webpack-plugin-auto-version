@@ -55,7 +55,7 @@ class WebpackAutoVersionPlugin {
     this.pkg = this.readJsonFile(this.pkgPath)
     this.fixPackageFile()
     this.autoIncreaseVersion()
-    this.banner = `${this.copyright} version ${this.newVersion}   ${new Date().toLocaleString()}`
+    this.banner = `${this.copyright} ${this.newVersion}   ${new Date().toLocaleString()}`
   }
   /**
    * 文件类是否存在version字段，不存在则创建
@@ -177,11 +177,19 @@ class WebpackAutoVersionPlugin {
         const existKeyword = that.ignoreSuffix.find((keyword) => filename.indexOf(keyword) !== -1)
         switch (ext) {
           case '.js':
-            newAssets[`${version}/${newFilename}`] = asset
+            if (existKeyword) {
+              newAssets[newFilename] = asset
+            } else {
+              newAssets[`${version}/${newFilename}`] = asset
+            }
             injectJsBanner(asset, that.banner)
             break
           case '.css':
-            newAssets[`${version}/${newFilename}`] = asset
+            if (existKeyword) {
+              newAssets[newFilename] = asset
+            } else {
+              newAssets[`${version}/${newFilename}`] = asset
+            }
             injectCssBanner(asset, that.banner)
             break
           default:
@@ -205,18 +213,19 @@ class WebpackAutoVersionPlugin {
       // console.log('keys', Object.keys(compilation.assets))
       compilation.assets = newAssets
       // 这里替换名称标记，增加了版本
-      compilation.chunks.forEach((chunk) => {
-        chunk.files = chunk.files
-          .filter((filename) => path.extname(filename) !== '.html')
-          .map((filename) => `${version}/${that.replaceVersionTag(filename)}`)
-          .concat(chunk.files.filter((filename) => path.extname(filename) === '.html'))
-        // console.log('chunks', chunk.files)
-      })
+      if (that.filenameMark) {
+        compilation.chunks.forEach((chunk) => {
+          chunk.files = chunk.files
+            .filter((filename) => path.extname(filename) !== '.html')
+            .map((filename) => `${version}/${that.replaceVersionTag(filename)}`)
+            .concat(chunk.files.filter((filename) => path.extname(filename) === '.html'))
+        })
+      }
       callback()
     })
 
     complier.plugin('failed', (err) => {
-      console.log('fail')
+      console.error('fail')
       notifier.notify({
         title: 'WebpackAutoVersionPlugin',
         message: err.message

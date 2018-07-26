@@ -113,6 +113,9 @@ template 会被自动替换成和 package.json 对应的版本号
 
 ## change log
 
+### v1.2.2
+- 修复ignoreSuffix兼容js和css文件判断
+
 ### v1.2.1
 
 - 修复与webpack-copy-plugin兼容问题

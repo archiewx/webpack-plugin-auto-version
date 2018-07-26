@@ -8,7 +8,7 @@ declare interface OptionType {
   space?: number
   cleanup?: boolean
   inspectContent?: boolean
-  template?: string,
+  template?: string
   isAsyncJs: boolean
 }
 
@@ -42,3 +42,4 @@ declare class WebpackAutoVersionPlugin {
 
   public apply(complier: webpack.Compiler): void
 }
+

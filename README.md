@@ -107,3 +107,10 @@ template 会被自动替换成和 package.json 对应的版本号
 - 支持配置 package.json 配置文件，支持多项目
 - 支持开发环境
 - 支持 webpack 钩子函数
+
+## change log
+
+### v1.2.0
+
+ * 增加对roadhog支持
+ * 修复部分问题

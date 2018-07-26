@@ -168,6 +168,8 @@ function WebpackAutoVersionPlugin() {
   this.template = options.template || '[' + this.copyright + ']version[/' + this.copyright + ']';
   this.ignoreSuffix = options.ignoreSuffix || ['.html'];
   this.isAsyncJs = options.isAsyncJs;
+  // 哪些模板支持html
+  this.htmlTempSuffix = ['.html', '.vm', '.ejs', '.handlbars'].concat(options.htmlTempSuffix || []);
 }
 /**
  * 初始化
@@ -308,6 +310,7 @@ var _initialiseProps = function _initialiseProps() {
     var version = _this.pkg.version;
 
     var that = _this;
+    var outputPath = that.webpackConfig.output;
     complier.plugin('emit', function (compilation, callback) {
       var newAssets = {};
       Object.keys(compilation.assets).forEach(function (filename) {
@@ -326,9 +329,12 @@ var _initialiseProps = function _initialiseProps() {
             injectCssBanner(asset, that.banner);
             break;
           default:
-            if (that.ignoreSuffix.indexOf(ext) !== -1) {
+            // 忽略的路径或路径中包含输入路径(兼容webpack-copy-plugin)
+            if (that.ignoreSuffix.indexOf(ext) !== -1 || filename.indexOf(outputPath) !== -1) {
+              // 不需要移动到版本号文件夹内
               newAssets[newFilename] = asset;
-              injectHtmlBanner(asset, that.banner);
+              // 在html语法模板后缀中则注入执行
+              that.htmlTempSuffix.indexOf(ext) !== -1 && injectHtmlBanner(asset, that.banner);
               // 替换文件中资源
             } else {
               newAssets[version + '/' + newFilename] = asset;

@@ -5,6 +5,8 @@ module.exports = {
     'function-paren-newline': [0],
     'no-unused-expressions': [0],
     'import/prefer-default-export': [0],
-    'prefer-template': [0]
+    'prefer-template': [0],
+    'import/extensions': [0],
+    'import/no-unresolved': [0]
   }
 }

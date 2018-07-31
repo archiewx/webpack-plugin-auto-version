@@ -149,7 +149,7 @@ class WebpackAutoVersionPlugin {
 
   resetOptions = (options) => {
     if (this.isAsyncJs) {
-      options.output = Object.assign(options.output, { publicPath: this.newVersion + '/' })
+      options.output = Object.assign(options.output, { publicPath: `/${this.newVersion}/` })
     }
   }
 

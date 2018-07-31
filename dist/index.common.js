@@ -298,7 +298,7 @@ var _initialiseProps = function _initialiseProps() {
 
   this.resetOptions = function (options) {
     if (_this.isAsyncJs) {
-      options.output = Object.assign(options.output, { publicPath: _this.newVersion + '/' });
+      options.output = Object.assign(options.output, { publicPath: '/' + _this.newVersion + '/' });
     }
   };
 

@@ -49,5 +49,13 @@
     "semver": "^5.5.0",
     "tslib": "^1.9.1",
     "yargs": "^11.0.0"
-  }
+  },
+  "files": [
+    "dist",
+    ".babelrc",
+    ".eslintignore",
+    ".eslintrc.js",
+    ".gitignore",
+    "package.json"
+  ]
 }
